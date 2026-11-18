@@ -92,6 +92,37 @@ export const register: Register = on => {
     return next(e)
   })
 
+  // 프롬프트 위 줄(AbovePrompt): token-weather-usage · ponytail 줄 아래에 한 덩어리로 보인다.
+  // Pane 을 띄우지 못하는 화면(VS Code 등)에서도 보이게 하려고 둔다. 진행 중은 최대 3줄, 없으면 한 줄로 줄인다.
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (e.props.hasSurvey) return next(e)
+    const { Box, Text } = $.ui.resolve(e)
+    const list = await read($, rows)
+    const t = (await read($, now)) || (await $.clock.now())
+    const active = list.filter((r) => !DONE.has(r.status))
+    const doneN = list.length - active.length
+    const line = (r: AgentRow) => {
+      const last = r.lastTool ? ` · ${r.lastTool}${r.lastDetail ? ` ${r.lastDetail}` : ''}` : ''
+      return `${MARK[r.status] ?? '·'} ${r.type || '에이전트'} — ${r.description || '(설명 없음)'} · ${dur(t - r.startedAt)} · 도구 ${r.tools}회${last}`
+    }
+    return (
+      <Box flexDirection="column">
+        <Text>
+          <Text bold>에이전트</Text>
+          <Text dimColor> 진행 {active.length}{doneN ? ` · 끝남 ${doneN}` : ''}{active.length === 0 ? ' — 실행 중 없음' : ''}</Text>
+        </Text>
+        {active.slice(0, 3).map((r) => <Text key={r.id} wrap="truncate-end">{line(r)}</Text>)}
+        {active.length > 3 && <Text dimColor>외 {active.length - 3}개 — /agent-board</Text>}
+      </Box>
+    )
+  })
+
+  // 줄 순서: 이 줄을 맨 아래로(다른 플러그인 줄은 그대로).
+  on('ui.render', { component: 'AbovePromptList' }, ($, e, next) => {
+    const mine = e.props.rows.filter((r) => r.plugin === 'agent-board')
+    return next({ ...e, props: { ...e.props, rows: [...e.props.rows.filter((r) => r.plugin !== 'agent-board'), ...mine] } })
+  })
+
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text } = $.ui.resolve(e)
     const list = await read($, rows)
