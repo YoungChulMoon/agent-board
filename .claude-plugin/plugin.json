@@ -1,0 +1,6 @@
+{
+  "name": "agent-board",
+  "version": "0.1.0",
+  "description": "실행 중인 서브에이전트 목록 패널 — 무엇을, 어디까지, 최근 도구 호출",
+  "types": "./types/index.d.ts"
+}

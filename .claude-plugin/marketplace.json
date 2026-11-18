@@ -1,0 +1,5 @@
+{
+  "name": "agent-board",
+  "owner": { "name": "YoungChulMoon" },
+  "plugins": [{ "name": "agent-board", "source": "./" }]
+}
